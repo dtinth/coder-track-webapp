@@ -146,7 +146,9 @@ class SignOutButton extends React.Component<{}> {
 class PleaseSignIn extends React.Component<{}> {
   async signIn() {
     try {
-      firebase.auth().signInWithPopup(new firebase.auth.FacebookAuthProvider());
+      await firebase
+        .auth()
+        .signInWithPopup(new firebase.auth.FacebookAuthProvider());
     } catch (e) {
       window.alert(`Cannot sign in: ${e}`);
     }
