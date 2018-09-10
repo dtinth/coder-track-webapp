@@ -4,7 +4,8 @@
     "target": "es2016",
     "jsx": "react",
     "rootDir": "src",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "strict": true
   },
   "exclude": ["node_modules", "**/node_modules/*"]
 }
