@@ -3,10 +3,13 @@
     "lib": ["es6"],
     "module": "commonjs",
     "noImplicitReturns": true,
+    "esModuleInterop": true,
     "outDir": "lib",
     "sourceMap": true,
     "target": "es6",
-    "strict": true
+    "strict": true,
+    "rootDir": "src",
+    "skipLibCheck": true
   },
   "compileOnSave": true,
   "include": ["src"]
