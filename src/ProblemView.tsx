@@ -7,13 +7,16 @@ export class ProblemView extends React.Component<
   { problemId: string },
   {
     problemData: IProblem | null;
+    inputData: string | null;
   }
 > {
+  private inputTextArea: HTMLTextAreaElement | null = null;
   constructor(props: any) {
     super(props);
-    this.state = { problemData: null };
+    this.state = { problemData: null, inputData: null };
   }
-  componentDidMount() {
+  async componentDidMount() {
+    // TODO error handling
     firebase
       .database()
       .ref("problems")
@@ -21,6 +24,19 @@ export class ProblemView extends React.Component<
       .on("value", snapshot => {
         this.setState({ problemData: snapshot!.val() });
       });
+    // TODO error handling
+    const inputDataResult = await (firebase.functions() as any).call(
+      "getInput",
+      { problemId: this.props.problemId }
+    );
+    this.setState({ inputData: inputDataResult.data.input });
+  }
+  onCopy() {
+    if (this.inputTextArea) {
+      this.inputTextArea.focus();
+      this.inputTextArea.select();
+      document.execCommand("copy");
+    }
   }
   render() {
     if (this.state.problemData) {
@@ -35,10 +51,20 @@ export class ProblemView extends React.Component<
           <Card>
             <h1>Input data</h1>
             <Textarea
-              disabled={!submissionAllowed}
-              value="[input data is not yet available, please wait…]"
+              disabled={!this.state.inputData}
+              readOnly
+              innerRef={el => (this.inputTextArea = el)}
+              value={
+                this.state.inputData ||
+                "[input data is not yet available, please wait…]"
+              }
             />
-            <Button disabled={!submissionAllowed}>Copy</Button>
+            <Button
+              disabled={!this.state.inputData}
+              onClick={() => this.onCopy()}
+            >
+              Copy
+            </Button>
             <h2>Submit output data</h2>
             <Textarea
               disabled={!submissionAllowed}
