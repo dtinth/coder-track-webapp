@@ -34,7 +34,7 @@ export class ContestantView extends React.Component<
             key={this.state.currentProblem}
           />
         ) : (
-          <Loading>Loading problem information...</Loading>
+          <Loading>Loading current problem state...</Loading>
         )}
       </div>
     );
