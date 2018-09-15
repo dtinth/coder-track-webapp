@@ -1,7 +1,7 @@
 import React from "react";
 import firebase from "firebase";
 import { IProblem } from "./types";
-import { Card, Button, Textarea } from "./UI";
+import { Card, Button, Textarea, Loading } from "./UI";
 import styled from "react-emotion";
 
 export class ProblemView extends React.Component<
@@ -9,12 +9,17 @@ export class ProblemView extends React.Component<
   {
     problemData: IProblem | null;
     inputData: string | null;
+    inputLoadingError: Error | null;
   }
 > {
   private inputTextArea: HTMLTextAreaElement | null = null;
   constructor(props: any) {
     super(props);
-    this.state = { problemData: null, inputData: null };
+    this.state = {
+      problemData: null,
+      inputData: null,
+      inputLoadingError: null
+    };
   }
   async componentDidMount() {
     // TODO error handling
@@ -25,15 +30,25 @@ export class ProblemView extends React.Component<
       .on("value", snapshot => {
         this.setState({ problemData: snapshot!.val() });
       });
-    // TODO error handling
-    const inputDataResult = await (firebase.functions() as any).call(
-      "getInput",
-      { problemId: this.props.problemId }
-    );
-    this.setState({ inputData: inputDataResult.data.input });
+    await this.loadInputData();
+  }
+  async loadInputData() {
+    this.setState({ inputData: null, inputLoadingError: null });
+    try {
+      const inputDataResult = await (firebase.functions() as any).call(
+        "getInputz",
+        { problemId: this.props.problemId }
+      );
+      this.setState({
+        inputData: inputDataResult.data.input,
+        inputLoadingError: null
+      });
+    } catch (e) {
+      this.setState({ inputData: null, inputLoadingError: e });
+    }
   }
   onCopy() {
-    if (this.inputTextArea) {
+    if (this.inputTextArea && !this.inputTextArea.disabled) {
       this.inputTextArea.focus();
       this.inputTextArea.select();
       document.execCommand("copy");
@@ -58,16 +73,28 @@ export class ProblemView extends React.Component<
               innerRef={el => (this.inputTextArea = el)}
               value={
                 this.state.inputData ||
-                "[input data is not yet available, please wait…]"
+                (this.state.inputLoadingError
+                  ? "[input data loading error, please click “retry”]\n\n" +
+                    String(this.state.inputLoadingError)
+                  : "[input data is not yet available, please wait…]")
               }
             />
             <Toolbar>
-              <Button
-                disabled={!this.state.inputData}
-                onClick={() => this.onCopy()}
-              >
-                Copy
-              </Button>
+              <Toolbar.Item>
+                <Button
+                  disabled={!this.state.inputData}
+                  onClick={() => this.onCopy()}
+                >
+                  Copy
+                </Button>
+              </Toolbar.Item>
+              {!!this.state.inputLoadingError && (
+                <React.Fragment>
+                  <Toolbar.Item>
+                    <Button onClick={() => this.loadInputData()}>Retry</Button>
+                  </Toolbar.Item>
+                </React.Fragment>
+              )}
             </Toolbar>
             <h2>Submit output data</h2>
             <Textarea
@@ -83,11 +110,21 @@ export class ProblemView extends React.Component<
         </div>
       );
     } else {
-      return <div>Problem not found :(</div>;
+      return <Loading>Loading problem information...</Loading>;
     }
   }
 }
 
-const Toolbar = styled("div")({
-  marginTop: "16px"
-});
+const Toolbar = Object.assign(
+  styled("div")({
+    marginTop: 8,
+    display: "flex"
+  }),
+  {
+    Item: styled("div")({
+      "&:not(:first-child)": {
+        marginLeft: 8
+      }
+    })
+  }
+);
