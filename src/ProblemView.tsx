@@ -35,8 +35,11 @@ export class ProblemView extends React.Component<Props, State> {
     this.setState({ problemData: snapshot!.val() });
   };
   componentDidUpdate(prevProps: Props, prevState: State) {
-    if (!canSubmit(prevState.problemData)) {
-      this.loadInputData();
+    if (
+      !canSubmit(prevState.problemData) &&
+      canSubmit(this.state.problemData)
+    ) {
+      setTimeout(() => this.loadInputData(), this.state.problemData ? 2000 : 0);
     }
   }
   async loadInputData() {
