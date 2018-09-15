@@ -37,7 +37,7 @@ export const Button = styled("button")({
   },
   "&:disabled": {
     background: "#ddd",
-    border: "none",
+    borderColor: "transparent",
     color: "#aaa"
   }
 });
