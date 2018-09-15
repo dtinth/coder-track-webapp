@@ -1,5 +1,5 @@
 export interface IProblem {
-  activated: boolean;
+  submissionAllowed: boolean;
   description: string;
   title: string;
 }
