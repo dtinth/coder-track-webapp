@@ -2,7 +2,7 @@ import * as React from "react";
 import { firebase } from "./firebase";
 import { css, keyframes } from "react-emotion";
 import { ContestantView } from "./ContestantView";
-import { Button, Card } from "./UI";
+import { Button, Card, Loading } from "./UI";
 
 class App extends React.Component<
   {},
@@ -58,45 +58,6 @@ class App extends React.Component<
         );
       }
     }
-  }
-}
-
-const loadingAnimation = keyframes({
-  from: { transform: "translateX(-100%)" },
-  to: { transform: "translateX(100%)" }
-});
-class Loading extends React.Component {
-  render() {
-    return (
-      <div
-        className={css({
-          padding: "32px",
-          textAlign: "center"
-        })}
-      >
-        {this.props.children}
-        <div
-          className={css({
-            overflow: "hidden",
-            position: "relative",
-            background: "#ECB36D33",
-            height: 8
-          })}
-        >
-          <div
-            className={css({
-              background: "#ECB36D",
-              position: "absolute",
-              left: 0,
-              top: 0,
-              right: 0,
-              bottom: 0,
-              animation: `0.4s ${loadingAnimation} linear infinite`
-            })}
-          />
-        </div>
-      </div>
-    );
   }
 }
 

@@ -2,6 +2,7 @@ import React from "react";
 import firebase from "firebase";
 import { IProblem } from "./types";
 import { Card, Button, Textarea } from "./UI";
+import styled from "react-emotion";
 
 export class ProblemView extends React.Component<
   { problemId: string },
@@ -51,6 +52,7 @@ export class ProblemView extends React.Component<
           <Card>
             <h1>Input data</h1>
             <Textarea
+              rows={5}
               disabled={!this.state.inputData}
               readOnly
               innerRef={el => (this.inputTextArea = el)}
@@ -59,24 +61,33 @@ export class ProblemView extends React.Component<
                 "[input data is not yet available, please wait…]"
               }
             />
-            <Button
-              disabled={!this.state.inputData}
-              onClick={() => this.onCopy()}
-            >
-              Copy
-            </Button>
+            <Toolbar>
+              <Button
+                disabled={!this.state.inputData}
+                onClick={() => this.onCopy()}
+              >
+                Copy
+              </Button>
+            </Toolbar>
             <h2>Submit output data</h2>
             <Textarea
+              rows={3}
               disabled={!submissionAllowed}
               defaultValue=""
               placeholder="Paste output result here..."
             />
-            <Button disabled={!submissionAllowed}>Submit</Button>
+            <Toolbar>
+              <Button disabled={!submissionAllowed}>Submit</Button>
+            </Toolbar>
           </Card>
         </div>
       );
     } else {
-      return <div />;
+      return <div>Problem not found :(</div>;
     }
   }
 }
+
+const Toolbar = styled("div")({
+  marginTop: "16px"
+});

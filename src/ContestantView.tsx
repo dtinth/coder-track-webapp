@@ -2,6 +2,7 @@ import React from "react";
 import firebase from "firebase";
 import { IProblem } from "./types";
 import { ProblemView } from "./ProblemView";
+import { Loading } from "./UI";
 
 export class ContestantView extends React.Component<
   {},
@@ -33,7 +34,7 @@ export class ContestantView extends React.Component<
             key={this.state.currentProblem}
           />
         ) : (
-          "No"
+          <Loading>Loading problem information...</Loading>
         )}
       </div>
     );
