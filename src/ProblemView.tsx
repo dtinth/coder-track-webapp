@@ -3,40 +3,50 @@ import firebase from "firebase";
 import { IProblem } from "./types";
 import { Card, Button, Textarea, Loading } from "./UI";
 import styled from "react-emotion";
-
-export class ProblemView extends React.Component<
-  { problemId: string },
-  {
-    problemData: IProblem | null;
-    inputData: string | null;
-    inputLoadingError: Error | null;
-  }
-> {
+type Props = { problemId: string };
+type State = {
+  problemData: IProblem | null;
+  problemLoadingError: Error | null;
+  inputData: string | null;
+  inputLoadingError: Error | null;
+};
+export class ProblemView extends React.Component<Props, State> {
   private inputTextArea: HTMLTextAreaElement | null = null;
   constructor(props: any) {
     super(props);
     this.state = {
       problemData: null,
+      problemLoadingError: null,
       inputData: null,
       inputLoadingError: null
     };
   }
   async componentDidMount() {
-    // TODO error handling
     firebase
       .database()
       .ref("problems")
       .child(this.props.problemId)
-      .on("value", snapshot => {
-        this.setState({ problemData: snapshot!.val() });
+      .on("value", this.onProblemDataLoad, (error: Error) => {
+        this.setState({ problemLoadingError: error });
       });
     await this.loadInputData();
   }
+  onProblemDataLoad = (snapshot: firebase.database.DataSnapshot | null) => {
+    this.setState({ problemData: snapshot!.val() });
+  };
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (!canSubmit(prevState.problemData)) {
+      this.loadInputData();
+    }
+  }
   async loadInputData() {
+    if (!canSubmit(this.state.problemData)) {
+      return;
+    }
     this.setState({ inputData: null, inputLoadingError: null });
     try {
       const inputDataResult = await (firebase.functions() as any).call(
-        "getInputz",
+        "getInput",
         { problemId: this.props.problemId }
       );
       this.setState({
@@ -72,11 +82,13 @@ export class ProblemView extends React.Component<
               readOnly
               innerRef={el => (this.inputTextArea = el)}
               value={
-                this.state.inputData ||
-                (this.state.inputLoadingError
-                  ? "[input data loading error, please click “retry”]\n\n" +
-                    String(this.state.inputLoadingError)
-                  : "[input data is not yet available, please wait…]")
+                canSubmit(this.state.problemData)
+                  ? this.state.inputData ||
+                    (this.state.inputLoadingError
+                      ? "[input data loading error, please click “retry”]\n\n" +
+                        String(this.state.inputLoadingError)
+                      : "[now loading input data, please wait…]")
+                  : "[input data is not yet available, please wait…]"
               }
             />
             <Toolbar>
@@ -128,3 +140,7 @@ const Toolbar = Object.assign(
     })
   }
 );
+
+function canSubmit(problemData: IProblem | null) {
+  return problemData ? problemData.submissionAllowed : false;
+}
