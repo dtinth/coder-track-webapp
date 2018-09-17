@@ -20,7 +20,7 @@ export class JoinForm extends React.Component<{}, State> {
     e.preventDefault();
     this.setState({ loading: true, error: null });
     try {
-      await (firebase.functions() as any).call("joinCompetition", {
+      await (firebase.functions() as any).call("joinContest", {
         track: this.state.selectedTrack
       });
       this.setState({ success: true });
@@ -55,12 +55,12 @@ export class JoinForm extends React.Component<{}, State> {
           </label>
         </p>
         {this.state.loading ? (
-          <Loading>Joining competition...</Loading>
+          <Loading>Joining contest...</Loading>
         ) : (
-          <Button>Join competition!</Button>
+          <Button>Join contest!</Button>
         )}
         {!!this.state.error && (
-          <ErrorBox error={this.state.error}>Cannot join competition</ErrorBox>
+          <ErrorBox error={this.state.error}>Cannot join contest</ErrorBox>
         )}
       </form>
     );
