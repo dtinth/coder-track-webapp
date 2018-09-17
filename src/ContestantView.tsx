@@ -1,42 +1,28 @@
-import React from "react";
 import firebase from "firebase";
-import { IProblem } from "./types";
+import React from "react";
+import * as fiery from "fiery";
 import { ProblemView } from "./ProblemView";
-import { Loading } from "./UI";
+import { Loading, ErrorBox } from "./UI";
+import { Data } from "fiery";
 
-export class ContestantView extends React.Component<
-  {},
-  {
-    currentProblem: string | null;
-  }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      currentProblem: null
-    };
-  }
-  componentDidMount() {
-    firebase
-      .database()
-      .ref("currentProblem")
-      .on("value", snapshot => {
-        this.setState({ currentProblem: snapshot!.val() });
-      });
-  }
-  componentWillUnmount() {}
+export class ContestantView extends React.Component<{ user: firebase.User }> {
   render() {
     return (
-      <div>
-        {this.state.currentProblem ? (
-          <ProblemView
-            problemId={this.state.currentProblem}
-            key={this.state.currentProblem}
-          />
-        ) : (
-          <Loading>Loading current problem state...</Loading>
-        )}
-      </div>
+      <Data dataRef={firebase.database().ref("currentProblem")}>
+        {dataState =>
+          fiery.unwrap(dataState, {
+            completed: currentProblem => (
+              <ProblemView problemId={currentProblem} key={currentProblem} />
+            ),
+            loading: () => <Loading>Loading current problem state...</Loading>,
+            error: (e, retry) => (
+              <ErrorBox retry={retry}>
+                Cannot fetch current problem state: {String(e)}
+              </ErrorBox>
+            )
+          })
+        }
+      </Data>
     );
   }
 }

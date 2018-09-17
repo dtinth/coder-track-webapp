@@ -45,7 +45,7 @@ class App extends React.Component<
               </div>
             }
           >
-            <ContestantView />
+            <ContestantView user={this.state.currentUser} />
           </MainContainer>
         );
       } else {
