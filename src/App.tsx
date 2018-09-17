@@ -2,7 +2,8 @@ import * as React from "react";
 import { firebase } from "./firebase";
 import { css, keyframes } from "react-emotion";
 import { ContestantView } from "./ContestantView";
-import { Button, Card, Loading } from "./UI";
+import { Button, Card, Loading, ErrorBox } from "./UI";
+import { Data, unwrap } from "fiery";
 
 class App extends React.Component<
   {},
@@ -39,7 +40,34 @@ class App extends React.Component<
                 <div style={{ marginRight: "1em" }}>
                   Hello, <strong>{this.state.currentUser.displayName}</strong>
                   <br />
-                  You have <strong>N</strong> points.
+                  <Data
+                    dataRef={firebase
+                      .database()
+                      .ref("contestants")
+                      .child(this.state.currentUser.uid)}
+                  >
+                    {dataState =>
+                      unwrap(dataState, {
+                        completed: contestantInfo =>
+                          contestantInfo ? (
+                            <div>
+                              You are on the{" "}
+                              <strong>{contestantInfo.track}</strong> track.
+                              <br />
+                              You have {contestantInfo.score} points.
+                            </div>
+                          ) : (
+                            <div>(You have not joined the contest yet...)</div>
+                          ),
+                        error: (e, retry) => (
+                          <ErrorBox error={e} retry={retry}>
+                            Cannot load contestant info
+                          </ErrorBox>
+                        ),
+                        loading: () => <div>Loading contestant information</div>
+                      })
+                    }
+                  </Data>
                 </div>
                 <SignOutButton />
               </div>
