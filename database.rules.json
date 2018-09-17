@@ -1,6 +1,23 @@
 {
   "rules": {
-    ".read": true,
-    ".write": true
+    "currentProblem": {
+      ".read": "true"
+    },
+    "problems": {
+      "$problemId": {
+        ".read": "true"
+      }
+    },
+    "data": {
+      "$problemId": {
+        ".read": "false"
+      }
+    },
+    "contestants": {
+      "$uid": {
+        ".read": "$uid === auth.uid"
+      }
+    },
+    ".write": false
   }
 }
