@@ -1,9 +1,12 @@
 import * as React from "react";
 import { firebase } from "./firebase";
-import { css, keyframes } from "react-emotion";
+import { css } from "react-emotion";
+import { HashRouter, Route, Switch, Redirect } from "react-router-dom";
 import { ContestantView } from "./ContestantView";
 import { Button, Card, Loading, ErrorBox } from "./UI";
 import { Data, unwrap } from "fiery";
+import { getContestantDataRef } from "./contestantData";
+import { AdminView } from "./AdminView";
 
 class App extends React.Component<
   {},
@@ -40,12 +43,7 @@ class App extends React.Component<
                 <div style={{ marginRight: "1em" }}>
                   Hello, <strong>{this.state.currentUser.displayName}</strong>
                   <br />
-                  <Data
-                    dataRef={firebase
-                      .database()
-                      .ref("contestants")
-                      .child(this.state.currentUser.uid)}
-                  >
+                  <Data dataRef={getContestantDataRef()}>
                     {dataState =>
                       unwrap(dataState, {
                         completed: contestantInfo =>
@@ -73,7 +71,21 @@ class App extends React.Component<
               </div>
             }
           >
-            <ContestantView user={this.state.currentUser} />
+            <HashRouter>
+              <div>
+                <Switch>
+                  <Route
+                    exact
+                    path="/"
+                    render={() => (
+                      <ContestantView user={this.state.currentUser!} />
+                    )}
+                  />
+                  <Route path="/admin" render={() => <AdminView />} />
+                  <Route path="*" render={() => <Redirect to="/" />} />
+                </Switch>
+              </div>
+            </HashRouter>
           </MainContainer>
         );
       } else {

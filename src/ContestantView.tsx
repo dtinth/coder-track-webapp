@@ -46,9 +46,12 @@ export class ContestantView extends React.Component<{ user: firebase.User }> {
       <Data dataRef={firebase.database().ref("currentProblem")}>
         {dataState =>
           fiery.unwrap(dataState, {
-            completed: currentProblem => (
-              <ProblemView problemId={currentProblem} key={currentProblem} />
-            ),
+            completed: currentProblem =>
+              currentProblem ? (
+                <ProblemView problemId={currentProblem} key={currentProblem} />
+              ) : (
+                <Card>Please wait for a problem to be made available...</Card>
+              ),
             loading: () => <Loading>Loading current problem state...</Loading>,
             error: (e, retry) => (
               <ErrorBox error={e} retry={retry}>

@@ -11,7 +11,8 @@
     "firebase": "^5.4.2",
     "react": "^16.5.0",
     "react-dom": "^16.5.0",
-    "react-emotion": "^9.2.8"
+    "react-emotion": "^9.2.8",
+    "react-router-dom": "^4.3.1"
   },
   "scripts": {
     "start": "react-scripts-parcel start",
@@ -33,6 +34,7 @@
     ]
   },
   "devDependencies": {
+    "@types/react-router-dom": "^4.3.1",
     "typescript": "^3.0.3"
   }
 }

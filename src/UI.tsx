@@ -48,7 +48,12 @@ export const Textarea = styled("textarea")({
   width: "100%",
   border: "1px solid #ECB36D",
   borderRadius: "5px",
-  font: "1em Menlo, Consolas, Monaco, monospace"
+  font: "1em Menlo, Consolas, Monaco, monospace",
+  "&:disabled": {
+    background: "#eee",
+    color: "#999",
+    borderColor: "#ccc"
+  }
 });
 
 const loadingAnimation = keyframes({

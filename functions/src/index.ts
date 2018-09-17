@@ -24,13 +24,77 @@ export const getInput = functions.https.onCall(async (data, context) => {
   if (!input) {
     throw new functions.https.HttpsError(
       "internal",
-      "No input... Something is wrong! " + `(uid=${uid}, bucket=${bucket})`
+      "No input... Something is wrong! " +
+        `(uid=${uid}, problemId=${data.problemId}, bucket=${bucket})`
     );
   }
   // TODO: check if problem has been activated
   return {
     bucket,
     input
+  };
+});
+
+export const submitOutput = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You must authenticate"
+    );
+  }
+  const uid = context.auth.uid;
+  const bucket = getBucket(uid);
+  const problemId = String(data.problemId);
+  const snapshot = await admin
+    .database()
+    .ref("data")
+    .child(problemId)
+    .child(String(bucket))
+    .child("output")
+    .once("value");
+  const expectedOutput = snapshot.val();
+  if (!expectedOutput) {
+    throw new functions.https.HttpsError(
+      "internal",
+      "No test output... Something is wrong! " +
+        `(uid=${uid}, problemId=${data.problemId}, bucket=${bucket})`
+    );
+  }
+  const contestantRef = admin
+    .database()
+    .ref("contestants")
+    .child(String(uid));
+  const contestantInfo = await contestantRef.once("value");
+  const cooldown = contestantInfo.child("cooldown").val();
+  if (cooldown && Date.now() < cooldown + 30000) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Please wait ${Math.max(
+        0,
+        Math.ceil((cooldown + 30000 - Date.now()) / 1000)
+      )}s before re-submitting`
+    );
+  }
+  const actualOutput = String(data.output);
+  const sanitize = (str: string) => str.trim().replace(/\s+/g, " ");
+  const success = sanitize(expectedOutput) === sanitize(actualOutput);
+  await admin
+    .database()
+    .ref("logs/submissions")
+    .child(problemId)
+    .push(logEntry(context, { output: actualOutput, success: true }));
+  if (success) {
+    await contestantRef
+      .child("solved")
+      .child(problemId)
+      .set(admin.database.ServerValue.TIMESTAMP);
+  } else {
+    await contestantRef
+      .child("cooldown")
+      .set(admin.database.ServerValue.TIMESTAMP);
+  }
+  return {
+    success
   };
 });
 
