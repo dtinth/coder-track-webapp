@@ -102,6 +102,7 @@ export class Loading extends React.Component {
 
 export class ErrorBox extends React.Component<{
   retry?: () => any;
+  error?: Error;
 }> {
   render() {
     return (
@@ -119,6 +120,19 @@ export class ErrorBox extends React.Component<{
           <div style={{ marginTop: "0.5em" }}>
             <Button onClick={() => this.props.retry}>Retry</Button>
           </div>
+        )}
+        {!!this.props.error && (
+          <pre
+            style={{
+              margin: "0.5em 0 0",
+              padding: "0.5em",
+              background: "#fff",
+              border: "1px solid #aaa",
+              color: "#555"
+            }}
+          >
+            {String(this.props.error.stack || this.props.error)}
+          </pre>
         )}
       </div>
     );
