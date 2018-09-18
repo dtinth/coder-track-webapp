@@ -13,7 +13,11 @@ import {
 import styled, { css } from "react-emotion";
 import * as fiery from "fiery";
 
-type Props = { problemId: string; submissionAllowed: boolean };
+type Props = {
+  problemId: string;
+  submissionAllowed: boolean;
+  finished: boolean;
+};
 export class ProblemView extends React.Component<Props> {
   render() {
     return (
@@ -62,6 +66,7 @@ export class ProblemView extends React.Component<Props> {
             problemId={problemId}
             problemData={problemData}
             submissionAllowed={this.props.submissionAllowed}
+            finished={this.props.finished}
           />
           <fiery.Data
             dataRef={firebase
@@ -188,6 +193,7 @@ type ProblemOutputProps = {
   problemId: string;
   problemData: IProblem;
   submissionAllowed: boolean;
+  finished: boolean;
 };
 type ProblemOutputState = {
   submitting: boolean;
@@ -265,6 +271,7 @@ class ProblemOutput extends React.PureComponent<
   renderForm(options: { solved: boolean }) {
     const disabled =
       !this.props.submissionAllowed ||
+      !!this.props.finished ||
       this.state.cooldown > 0 ||
       options.solved;
     return (
@@ -279,7 +286,9 @@ class ProblemOutput extends React.PureComponent<
         {!this.state.submitting && (
           <Toolbar>
             <Toolbar.Item>
-              <Button disabled={disabled}>Submit</Button>
+              <Button disabled={disabled}>
+                {this.props.finished ? "Time is up" : "Submit"}
+              </Button>
             </Toolbar.Item>
             {this.state.cooldown > 0 && (
               <Toolbar.Item>

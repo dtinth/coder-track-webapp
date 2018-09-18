@@ -52,11 +52,14 @@ export class ContestantView extends React.Component<{ user: firebase.User }> {
               const submissionAllowed =
                 !!currentProblemState &&
                 !!currentProblemState.submissionAllowed;
+              const finished =
+                !!currentProblemState && !!currentProblemState.finished;
               return currentProblem ? (
                 <ProblemView
                   problemId={currentProblem}
                   key={currentProblem}
                   submissionAllowed={submissionAllowed}
+                  finished={finished}
                 />
               ) : (
                 <Card>Please wait for a problem to be made available...</Card>
