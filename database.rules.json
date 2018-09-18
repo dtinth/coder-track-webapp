@@ -1,5 +1,6 @@
 {
   "rules": {
+    ".read": "root.child('admins').child(auth.uid).val() === true",
     "problems": {
       "$problemId": {
         ".read": "true"
