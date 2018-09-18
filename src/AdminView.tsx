@@ -14,32 +14,37 @@ const AdminContext = createContext<{
   problems: { [problemId: string]: IProblem };
   contestants: { [uid: string]: IContestant };
   contestInfo: IContestInfo | null;
+  code: { [problemId: string]: { [uid: string]: string } } | null;
 }>(null as any);
 
 export class AdminView extends React.Component {
   render() {
     return (
       <Card>
-        <h1>Admin</h1>
         <Data dataRef={firebase.database().ref("problems")}>
           {problemsState => (
             <Data dataRef={firebase.database().ref("contestants")}>
               {contestantsState => (
                 <Data dataRef={firebase.database().ref("contest/info")}>
-                  {contestInfoState =>
-                    joinState(
-                      {
-                        problems: problemsState,
-                        contestants: contestantsState,
-                        contestInfo: contestInfoState
-                      },
-                      output => (
-                        <AdminContext.Provider value={output}>
-                          <AdminMain />
-                        </AdminContext.Provider>
-                      )
-                    )
-                  }
+                  {contestInfoState => (
+                    <Data dataRef={firebase.database().ref("contest/code")}>
+                      {codeState =>
+                        joinState(
+                          {
+                            problems: problemsState,
+                            contestants: contestantsState,
+                            contestInfo: contestInfoState,
+                            code: codeState
+                          },
+                          output => (
+                            <AdminContext.Provider value={output}>
+                              <AdminMain />
+                            </AdminContext.Provider>
+                          )
+                        )
+                      }
+                    </Data>
+                  )}
                 </Data>
               )}
             </Data>
@@ -99,13 +104,67 @@ class AdminMain extends React.Component {
         />
         <Route
           exact
+          path="/admin/code/:problemId/:uid"
+          render={({ match }) => {
+            const problemId: string = match.params.problemId;
+            const uid: string = match.params.uid;
+            return (
+              <div>
+                <h2>
+                  Solution for problem "{problemId}" by{" "}
+                  <ContestantName uid={uid} />
+                </h2>
+                <AdminContext.Consumer>
+                  {ctx => {
+                    const code =
+                      ctx.code &&
+                      ctx.code[problemId] &&
+                      ctx.code[problemId][uid];
+                    return code ? (
+                      <MarkdownBody>
+                        <pre
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            wordWrap: "break-word"
+                          }}
+                        >
+                          <code>{code}</code>
+                        </pre>
+                      </MarkdownBody>
+                    ) : (
+                      "No code submitted"
+                    );
+                  }}
+                </AdminContext.Consumer>
+              </div>
+            );
+          }}
+        />
+        <Route
+          exact
+          path="/admin/leaderboard"
+          render={() => (
+            <div>
+              <h2>Leaderboard</h2>
+              <Leaderboard />
+            </div>
+          )}
+        />
+        <Route
+          exact
           path="/admin"
           render={() => (
-            <ul>
-              <li>
-                <Link to="/admin/problems">Problems</Link>
-              </li>
-            </ul>
+            <div>
+              <h1>Admin</h1>
+              <ul>
+                <li>
+                  <Link to="/admin/problems">Problems</Link>
+                </li>
+                <li>
+                  <Link to="/admin/leaderboard">Leaderboard</Link>
+                </li>
+              </ul>
+            </div>
           )}
         />
       </Switch>
@@ -271,6 +330,7 @@ class AdminProblemView extends React.Component<{
               <th>Rank</th>
               <th>Name</th>
               <th>Time</th>
+              <th>Code</th>
             </tr>
           </thead>
           {finishers.map(f => (
@@ -280,8 +340,83 @@ class AdminProblemView extends React.Component<{
                 <ContestantName uid={f.uid} />
               </td>
               <td>{formatTimeTaken(f.timestamp, submissionAllowed)}</td>
+              <td>
+                <CodeLink uid={f.uid} problemId={this.props.problemId} />
+              </td>
             </tr>
           ))}
+        </Table>
+      </div>
+    );
+  }
+}
+class Leaderboard extends React.Component {
+  render() {
+    return (
+      <Data dataRef={firebase.database().ref("contest/points")}>
+        {leaderboardState =>
+          unwrap(leaderboardState, {
+            loading: () => <Loading>Loading leaderboard</Loading>,
+            error: (e, retry) => (
+              <ErrorBox error={e} retry={retry}>
+                Failed to load leaderboard
+              </ErrorBox>
+            ),
+            completed: leaderboard => (
+              <AdminContext.Consumer>
+                {ctx => this.renderLeaderboard(leaderboard, ctx.problems)}
+              </AdminContext.Consumer>
+            )
+          })
+        }
+      </Data>
+    );
+  }
+  renderLeaderboard(
+    leaderboard: { [uid: string]: { [problemId: string]: number } } | null,
+    problems: { [problemId: string]: IProblem }
+  ): ReactNode {
+    const sortedProblemKeys = sortBy(
+      Object.keys(problems),
+      k => problems[k].number
+    );
+    const totalScore = (uid: string) =>
+      leaderboard
+        ? Object.keys(leaderboard[uid]).reduce(
+            (a, k) => a + leaderboard[uid][k],
+            0
+          )
+        : 0;
+    const sortedContestantKeys = leaderboard
+      ? sortBy(Object.keys(leaderboard), totalScore).reverse()
+      : [];
+    return (
+      <div>
+        <Table>
+          <thead>
+            <tr>
+              <th>Contestant</th>
+              {sortedProblemKeys.map(k => (
+                <th key={k}>{problems[k].number}</th>
+              ))}
+              <th>GRAND</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedContestantKeys.map(uid => (
+              <tr key={uid}>
+                <td>
+                  <ContestantName uid={uid} />
+                </td>
+                {sortedProblemKeys.map(k => (
+                  <td key={k} style={{ textAlign: "right" }}>
+                    {leaderboard![uid][k] || "-"}
+                  </td>
+                ))}
+                <td style={{ textAlign: "right" }}>{totalScore(uid)}</td>
+              </tr>
+            ))}
+          </tbody>
         </Table>
       </div>
     );
@@ -308,6 +443,26 @@ class ContestantName extends React.Component<{ uid: string }> {
             </span>
           ) : (
             `(user ${uid})`
+          );
+        }}
+      </AdminContext.Consumer>
+    );
+  }
+}
+
+class CodeLink extends React.Component<{ uid: string; problemId: string }> {
+  render() {
+    const uid = this.props.uid;
+    const problemId = this.props.problemId;
+    return (
+      <AdminContext.Consumer>
+        {ctx => {
+          const code =
+            ctx.code && ctx.code[problemId] && ctx.code[problemId][uid];
+          return code ? (
+            <Link to={`/admin/code/${problemId}/${uid}`}>Code</Link>
+          ) : (
+            ""
           );
         }}
       </AdminContext.Consumer>

@@ -139,6 +139,33 @@ export const joinContest = functions.https.onCall(async (data, context) => {
     .push(logEntry(context, { track: track }));
   return { ok: true };
 });
+export const submitSourceCode = functions.https.onCall(
+  async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "You must authenticate"
+      );
+    }
+    const uid = context.auth.uid;
+    const problemId = String(data.problemId);
+    const code = String(data.code);
+    await admin
+      .database()
+      .ref("contest/logs/code")
+      .child(problemId)
+      .push(logEntry(context, { code }));
+    await admin
+      .database()
+      .ref("contest/code")
+      .child(problemId)
+      .child(String(uid))
+      .set(code);
+    return {
+      ok: true
+    };
+  }
+);
 
 //////////////// ADMIN /////////////////
 

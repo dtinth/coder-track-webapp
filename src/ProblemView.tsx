@@ -63,6 +63,27 @@ export class ProblemView extends React.Component<Props> {
             problemData={problemData}
             submissionAllowed={this.props.submissionAllowed}
           />
+          <fiery.Data
+            dataRef={firebase
+              .database()
+              .ref("contest/solved")
+              .child(firebase.auth().currentUser!.uid)
+              .child(this.props.problemId)}
+          >
+            {dataState =>
+              fiery.unwrap(dataState, {
+                completed: solvedTime =>
+                  !!solvedTime && (
+                    <div>
+                      <h2>Submit source code</h2>
+                      <SourceCodeSubmissionForm problemId={problemId} />
+                    </div>
+                  ),
+                error: () => null,
+                loading: () => null
+              })
+            }
+          </fiery.Data>
         </Card>
       </div>
     );
@@ -127,7 +148,7 @@ class ProblemInput extends React.PureComponent<
     return (
       <div>
         <Textarea
-          rows={5}
+          rows={8}
           disabled={!this.state.inputData}
           readOnly
           innerRef={el => (this.inputTextArea = el)}
@@ -281,7 +302,8 @@ class ProblemOutput extends React.PureComponent<
                   >
                     {dataState =>
                       fiery.unwrap(dataState, {
-                        completed: pt => <span>You received {pt} points!</span>,
+                        completed: pt =>
+                          pt > 0 && <span>You received {pt} points!</span>,
                         error: () => null,
                         loading: () => null
                       })
@@ -296,6 +318,71 @@ class ProblemOutput extends React.PureComponent<
         {!!this.state.submissionError && (
           <ErrorBox error={this.state.submissionError}>
             Failed to submit output...
+          </ErrorBox>
+        )}
+      </form>
+    );
+  }
+}
+
+type SourceCodeSubmissionFormProps = { problemId: string };
+type SourceCodeSubmissionFormState = {
+  submitting: boolean;
+  submissionError: Error | null;
+};
+class SourceCodeSubmissionForm extends React.PureComponent<
+  SourceCodeSubmissionFormProps,
+  SourceCodeSubmissionFormState
+> {
+  private inputTextArea: HTMLTextAreaElement | null = null;
+  state: SourceCodeSubmissionFormState = {
+    submitting: false,
+    submissionError: null
+  };
+  onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const sourceCode = this.inputTextArea!.value;
+    if (!sourceCode) {
+      window.alert("Please describe how you solve it solution!");
+      return;
+    }
+    this.setState({ submitting: true, submissionError: null });
+    try {
+      await (firebase.functions() as any).call("submitSourceCode", {
+        problemId: this.props.problemId,
+        code: sourceCode
+      });
+      window.alert("Thank you!");
+    } catch (e) {
+      this.setState({ submissionError: e });
+    } finally {
+      this.setState({ submitting: false });
+    }
+  };
+  render() {
+    return (
+      <form onSubmit={this.onSubmit}>
+        <p>
+          Please submit the source code or describe how you solved the problem!
+        </p>
+        <Textarea
+          rows={8}
+          disabled={!!this.state.submitting}
+          defaultValue=""
+          placeholder="Please enter source code..."
+          innerRef={el => (this.inputTextArea = el)}
+        />
+        {!this.state.submitting && (
+          <Toolbar>
+            <Toolbar.Item>
+              <Button>Submit source code</Button>
+            </Toolbar.Item>
+          </Toolbar>
+        )}
+        {!!this.state.submitting && <Loading>Submitting...</Loading>}
+        {!!this.state.submissionError && (
+          <ErrorBox error={this.state.submissionError}>
+            Failed to submit source code...
           </ErrorBox>
         )}
       </form>
