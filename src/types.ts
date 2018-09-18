@@ -13,9 +13,11 @@ export interface IContestant {
 export interface IContestInfo {
   currentProblem?: string;
   problems?: {
-    [problemId: string]: {
-      activated?: number;
-      submissionAllowed?: number;
-    };
+    [problemId: string]: IProblemState | null;
   };
+}
+
+export interface IProblemState {
+  activated?: number;
+  submissionAllowed?: number;
 }

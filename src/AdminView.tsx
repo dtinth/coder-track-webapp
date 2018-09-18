@@ -1,12 +1,13 @@
 import React, { ReactNode } from "react";
-import { Card, ErrorBox, MarkdownBody } from "./UI";
+import { Card, ErrorBox, MarkdownBody, Toolbar, Button } from "./UI";
 import { Data, unwrap } from "fiery";
 import firebase from "firebase";
-import { IProblem, IContestant, IContestInfo } from "./types";
+import { IProblem, IContestant, IContestInfo, IProblemState } from "./types";
 import { Switch, Route } from "react-router";
 import { Link } from "react-router-dom";
 import sortBy from "lodash.sortby";
 import styled from "react-emotion";
+import { callFunction } from "./firebaseFunctions";
 export class AdminView extends React.Component {
   render() {
     return (
@@ -61,11 +62,19 @@ export class AdminView extends React.Component {
             const k = match.params.id;
             const problem = problems[k];
             const problemState =
-              contestInfo && contestInfo.problems && contestInfo.problems[k];
-            const activated = problemState && problemState.activated;
-            const submissionAllowed =
-              problemState && problemState.submissionAllowed;
-            return <AdminProblemView problemId={k} problemData={problem} />;
+              (contestInfo &&
+                contestInfo.problems &&
+                contestInfo.problems[k]) ||
+              null;
+            const currentProblem = contestInfo && contestInfo.currentProblem;
+            return (
+              <AdminProblemView
+                problemId={k}
+                problemData={problem}
+                problemState={problemState}
+                current={currentProblem === k}
+              />
+            );
           }}
         />
         <Route
@@ -135,11 +144,35 @@ class AdminProblemList extends React.PureComponent<{
 class AdminProblemView extends React.Component<{
   problemId: string;
   problemData: IProblem;
+  problemState: IProblemState | null;
+  current: boolean;
 }> {
   render() {
+    const problemId = this.props.problemId;
+    const problemState = this.props.problemState;
+    const activated = problemState && problemState.activated;
+    const submissionAllowed = problemState && problemState.submissionAllowed;
     return (
       <div>
         <h2>Problem [{this.props.problemId}]</h2>
+        <div style={{ marginBottom: "1em" }}>
+          <Toolbar>
+            <Toolbar.Item>
+              <ActionButton
+                action={() => callFunction("makeCurrent", { problemId })}
+                enabled={this.props.current}
+              >
+                Activate and make current
+              </ActionButton>
+            </Toolbar.Item>
+            <Toolbar.Item>
+              <Button>Remove current</Button>
+            </Toolbar.Item>
+            <Toolbar.Item>
+              <Button>Allow submission</Button>
+            </Toolbar.Item>
+          </Toolbar>
+        </div>
         <details>
           <summary>Problem description</summary>
           <MarkdownBody
@@ -149,6 +182,55 @@ class AdminProblemView extends React.Component<{
           />
         </details>
       </div>
+    );
+  }
+}
+
+class ActionButton extends React.Component<{
+  action: () => Promise<any>;
+  disabled?: boolean;
+}> {
+  state = {
+    loading: false
+  };
+  onClick = async () => {
+    this.setState({ loading: true });
+    try {
+      await this.props.action();
+    } catch (e) {
+      window.alert("Cannot perform action!\n\n" + String(e.stack || e));
+      throw e;
+    } finally {
+      this.setState({ loading: false });
+    }
+  };
+  render() {
+    return (
+      <Button
+        disabled={this.props.disabled || this.state.loading}
+        onClick={this.onClick}
+      >
+        <span style={{ display: "block", position: "relative" }}>
+          <span
+            style={{ visibility: this.state.loading ? "hidden" : "visible" }}
+          >
+            {this.props.children}
+          </span>
+          <span
+            style={{
+              display: "block",
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: 0,
+              textAlign: "center",
+              visibility: this.state.loading ? "visible" : "hidden"
+            }}
+          >
+            [...]
+          </span>
+        </span>
+      </Button>
     );
   }
 }
