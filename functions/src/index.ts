@@ -83,7 +83,7 @@ export const submitOutput = functions.https.onCall(async (data, context) => {
     .database()
     .ref("contest/logs/submissions")
     .child(problemId)
-    .push(logEntry(context, { output: actualOutput, success }));
+    .push(logEntry(context, { output: actualOutput, success, bucket }));
   if (success) {
     await admin
       .database()
