@@ -39,19 +39,33 @@ export class ContestantView extends React.Component<{ user: firebase.User }> {
   }
   renderProblem() {
     return (
-      <Data dataRef={firebase.database().ref("currentProblem")}>
+      <Data dataRef={firebase.database().ref("contest/info")}>
         {dataState =>
           fiery.unwrap(dataState, {
-            completed: currentProblem =>
-              currentProblem ? (
-                <ProblemView problemId={currentProblem} key={currentProblem} />
+            completed: contestInfo => {
+              const currentProblem = contestInfo && contestInfo.currentProblem;
+              const currentProblemState =
+                contestInfo &&
+                contestInfo.problems &&
+                currentProblem &&
+                contestInfo.problems[currentProblem];
+              const submissionAllowed =
+                !!currentProblemState &&
+                !!currentProblemState.submissionAllowed;
+              return currentProblem ? (
+                <ProblemView
+                  problemId={currentProblem}
+                  key={currentProblem}
+                  submissionAllowed={submissionAllowed}
+                />
               ) : (
                 <Card>Please wait for a problem to be made available...</Card>
-              ),
-            loading: () => <Loading>Loading current problem state...</Loading>,
+              );
+            },
+            loading: () => <Loading>Loading contest state...</Loading>,
             error: (e, retry) => (
               <ErrorBox error={e} retry={retry}>
-                Cannot fetch current problem state
+                Cannot load contest state
               </ErrorBox>
             )
           })

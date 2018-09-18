@@ -10,7 +10,8 @@ body {
 }
 
 code,
-textarea {
+textarea,
+pre {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }

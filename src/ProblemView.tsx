@@ -2,11 +2,10 @@ import React, { FormEvent } from "react";
 import firebase from "firebase";
 import { IProblem } from "./types";
 import { Card, Button, Textarea, Loading, ErrorBox } from "./UI";
-import styled from "react-emotion";
+import styled, { css } from "react-emotion";
 import * as fiery from "fiery";
-import { getContestantDataRef } from "./contestantData";
 
-type Props = { problemId: string };
+type Props = { problemId: string; submissionAllowed: boolean };
 export class ProblemView extends React.Component<Props> {
   render() {
     return (
@@ -39,13 +38,30 @@ export class ProblemView extends React.Component<Props> {
       <div>
         <Card>
           <h1>{problemData.title}</h1>
-          <div>{problemData.description}</div>
+          <div
+            className={css({
+              lineHeight: "1.4",
+              pre: {
+                background: "#eee",
+                padding: "1em"
+              }
+            })}
+            dangerouslySetInnerHTML={{ __html: problemData.description }}
+          />
         </Card>
         <Card>
           <h1>Input data</h1>
-          <ProblemInput problemId={problemId} problemData={problemData} />
+          <ProblemInput
+            problemId={problemId}
+            problemData={problemData}
+            submissionAllowed={this.props.submissionAllowed}
+          />
           <h2>Submit output data</h2>
-          <ProblemOutput problemId={problemId} problemData={problemData} />
+          <ProblemOutput
+            problemId={problemId}
+            problemData={problemData}
+            submissionAllowed={this.props.submissionAllowed}
+          />
         </Card>
       </div>
     );
@@ -55,6 +71,7 @@ export class ProblemView extends React.Component<Props> {
 type ProblemInputProps = {
   problemId: string;
   problemData: IProblem;
+  submissionAllowed: boolean;
 };
 type ProblemInputState = {
   inputData: string | null;
@@ -76,15 +93,12 @@ class ProblemInput extends React.PureComponent<
     prevProps: ProblemInputProps,
     prevState: ProblemInputState
   ) {
-    if (
-      !canSubmit(prevProps.problemData) &&
-      canSubmit(this.props.problemData)
-    ) {
-      setTimeout(() => this.loadInputData(), this.props.problemData ? 2000 : 0);
+    if (!prevProps.submissionAllowed && this.props.submissionAllowed) {
+      setTimeout(() => this.loadInputData(), 1000);
     }
   }
   async loadInputData() {
-    if (!canSubmit(this.props.problemData)) {
+    if (!this.props.submissionAllowed) {
       return;
     }
     this.setState({ inputData: null, inputLoadingError: null });
@@ -117,7 +131,7 @@ class ProblemInput extends React.PureComponent<
           readOnly
           innerRef={el => (this.inputTextArea = el)}
           value={
-            canSubmit(this.props.problemData)
+            this.props.submissionAllowed
               ? this.state.inputData ||
                 (this.state.inputLoadingError
                   ? "[input data loading error, please click “retry”]\n\n" +
@@ -151,6 +165,7 @@ class ProblemInput extends React.PureComponent<
 type ProblemOutputProps = {
   problemId: string;
   problemData: IProblem;
+  submissionAllowed: boolean;
 };
 type ProblemOutputState = {
   submitting: boolean;
@@ -227,7 +242,7 @@ class ProblemOutput extends React.PureComponent<
   }
   renderForm(options: { solved: boolean }) {
     const disabled =
-      !canSubmit(this.props.problemData) ||
+      !this.props.submissionAllowed ||
       this.state.cooldown > 0 ||
       options.solved;
     return (
@@ -286,7 +301,3 @@ const Toolbar = Object.assign(
     })
   }
 );
-
-function canSubmit(problemData: IProblem | null) {
-  return problemData ? problemData.submissionAllowed : false;
-}

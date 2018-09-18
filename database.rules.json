@@ -1,8 +1,5 @@
 {
   "rules": {
-    "currentProblem": {
-      ".read": "true"
-    },
     "problems": {
       "$problemId": {
         ".read": "true"
@@ -19,6 +16,9 @@
       }
     },
     "contest": {
+      "info": {
+        ".read": "true"
+      },
       "solved": {
         "$uid": {
           ".read": "$uid === auth.uid"
