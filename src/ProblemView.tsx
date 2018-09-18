@@ -1,6 +1,7 @@
 import React, { FormEvent } from "react";
 import firebase from "firebase";
 import { IProblem } from "./types";
+import download from "downloadjs";
 import {
   Card,
   Button,
@@ -149,6 +150,18 @@ class ProblemInput extends React.PureComponent<
       document.execCommand("copy");
     }
   }
+  onDownload() {
+    if (this.inputTextArea && !this.inputTextArea.disabled) {
+      const parts = [
+        "codertrack",
+        this.props.problemId,
+        "input",
+        firebase.auth().currentUser!.uid.substr(0, 7)
+      ];
+      const filename = `${parts.join("-")}.txt`;
+      download(this.inputTextArea.value, filename, "text/plain");
+    }
+  }
   render() {
     return (
       <div>
@@ -174,6 +187,14 @@ class ProblemInput extends React.PureComponent<
               onClick={() => this.onCopy()}
             >
               Copy
+            </Button>
+          </Toolbar.Item>
+          <Toolbar.Item>
+            <Button
+              disabled={!this.state.inputData}
+              onClick={() => this.onDownload()}
+            >
+              Download
             </Button>
           </Toolbar.Item>
           {!!this.state.inputLoadingError && (
