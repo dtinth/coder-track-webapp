@@ -12,7 +12,7 @@ import { getRankingInfo } from "../functions/src/submissions";
 
 const AdminContext = createContext<{
   problems: { [problemId: string]: IProblem };
-  contestants: { [uid: string]: IContestant };
+  contestants: { [uid: string]: IContestant } | null;
   contestInfo: IContestInfo | null;
   code: { [problemId: string]: { [uid: string]: string } } | null;
 }>(null as any);
@@ -364,7 +364,13 @@ class Leaderboard extends React.Component {
             ),
             completed: leaderboard => (
               <AdminContext.Consumer>
-                {ctx => this.renderLeaderboard(leaderboard, ctx.problems)}
+                {ctx =>
+                  this.renderLeaderboard(
+                    leaderboard,
+                    ctx.problems,
+                    ctx.contestants
+                  )
+                }
               </AdminContext.Consumer>
             )
           })
@@ -373,22 +379,28 @@ class Leaderboard extends React.Component {
     );
   }
   renderLeaderboard(
-    leaderboard: { [uid: string]: { [problemId: string]: number } } | null,
-    problems: { [problemId: string]: IProblem }
+    leaderboard: {
+      [uid: string]: { [problemId: string]: number } | undefined;
+    } | null,
+    problems: { [problemId: string]: IProblem },
+    contestants: { [uid: string]: IContestant } | null
   ): ReactNode {
     const sortedProblemKeys = sortBy(
       Object.keys(problems),
       k => problems[k].number
     );
-    const totalScore = (uid: string) =>
-      leaderboard
-        ? Object.keys(leaderboard[uid]).reduce(
-            (a, k) => a + leaderboard[uid][k],
-            0
-          )
+    const score = (uid: string, k: string) => {
+      const myData = leaderboard && leaderboard[uid];
+      return myData ? myData[k] || 0 : 0;
+    };
+    const totalScore = (uid: string) => {
+      const myData = leaderboard && leaderboard[uid];
+      return myData
+        ? Object.keys(myData).reduce((a, k) => a + myData[k], 0)
         : 0;
-    const sortedContestantKeys = leaderboard
-      ? sortBy(Object.keys(leaderboard), totalScore).reverse()
+    };
+    const sortedContestantKeys = contestants
+      ? sortBy(Object.keys(contestants), totalScore).reverse()
       : [];
     return (
       <div>
@@ -410,7 +422,7 @@ class Leaderboard extends React.Component {
                 </td>
                 {sortedProblemKeys.map(k => (
                   <td key={k} style={{ textAlign: "right" }}>
-                    {leaderboard![uid][k] || "-"}
+                    {score(uid, k) || "-"}
                   </td>
                 ))}
                 <td style={{ textAlign: "right" }}>{totalScore(uid)}</td>
