@@ -82,7 +82,7 @@ export const submitOutput = functions.https.onCall(async (data, context) => {
     .database()
     .ref("contest/logs/submissions")
     .child(problemId)
-    .push(logEntry(context, { output: actualOutput, success: true }));
+    .push(logEntry(context, { output: actualOutput, success }));
   if (success) {
     await admin
       .database()
@@ -219,7 +219,7 @@ function logEntry(
   return {
     ...data,
     timestamp: admin.database.ServerValue.TIMESTAMP,
-    user: context.auth && context.auth.uid
+    uid: context.auth && context.auth.uid
   };
 }
 

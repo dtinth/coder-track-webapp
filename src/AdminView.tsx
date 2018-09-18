@@ -1,5 +1,5 @@
-import React, { ReactNode } from "react";
-import { Card, ErrorBox, MarkdownBody, Toolbar, Button } from "./UI";
+import React, { ReactNode, createContext } from "react";
+import { Card, ErrorBox, MarkdownBody, Toolbar, Button, Loading } from "./UI";
 import { Data, unwrap } from "fiery";
 import firebase from "firebase";
 import { IProblem, IContestant, IContestInfo, IProblemState } from "./types";
@@ -8,6 +8,14 @@ import { Link } from "react-router-dom";
 import sortBy from "lodash.sortby";
 import styled from "react-emotion";
 import { callFunction } from "./firebaseFunctions";
+import { getRankingInfo } from "./submissions";
+
+const AdminContext = createContext<{
+  problems: { [problemId: string]: IProblem };
+  contestants: { [uid: string]: IContestant };
+  contestInfo: IContestInfo | null;
+}>(null as any);
+
 export class AdminView extends React.Component {
   render() {
     return (
@@ -25,12 +33,11 @@ export class AdminView extends React.Component {
                         contestants: contestantsState,
                         contestInfo: contestInfoState
                       },
-                      output =>
-                        this.renderAdmin(
-                          output.problems,
-                          output.contestants,
-                          output.contestInfo
-                        )
+                      output => (
+                        <AdminContext.Provider value={output}>
+                          <AdminMain />
+                        </AdminContext.Provider>
+                      )
                     )
                   }
                 </Data>
@@ -41,39 +48,52 @@ export class AdminView extends React.Component {
       </Card>
     );
   }
-  renderAdmin(
-    problems: { [problemId: string]: IProblem },
-    contestants: { [uid: string]: IContestant },
-    contestInfo: IContestInfo | null
-  ) {
+}
+
+class AdminMain extends React.Component {
+  render() {
     return (
       <Switch>
         <Route
           exact
           path="/admin/problems"
           render={() => (
-            <AdminProblemList problems={problems} contestInfo={contestInfo} />
+            <AdminContext.Consumer>
+              {ctx => (
+                <AdminProblemList
+                  problems={ctx.problems}
+                  contestInfo={ctx.contestInfo}
+                />
+              )}
+            </AdminContext.Consumer>
           )}
         />
         <Route
           exact
           path="/admin/problem/:id"
           render={({ match }) => {
-            const k = match.params.id;
-            const problem = problems[k];
-            const problemState =
-              (contestInfo &&
-                contestInfo.problems &&
-                contestInfo.problems[k]) ||
-              null;
-            const currentProblem = contestInfo && contestInfo.currentProblem;
             return (
-              <AdminProblemView
-                problemId={k}
-                problemData={problem}
-                problemState={problemState}
-                current={currentProblem === k}
-              />
+              <AdminContext.Consumer>
+                {({ problems, contestInfo }) => {
+                  const k = match.params.id;
+                  const problem = problems[k];
+                  const problemState =
+                    (contestInfo &&
+                      contestInfo.problems &&
+                      contestInfo.problems[k]) ||
+                    null;
+                  const currentProblem =
+                    contestInfo && contestInfo.currentProblem;
+                  return (
+                    <AdminProblemView
+                      problemId={k}
+                      problemData={problem}
+                      problemState={problemState}
+                      current={currentProblem === k}
+                    />
+                  );
+                }}
+              </AdminContext.Consumer>
             );
           }}
         />
@@ -173,6 +193,8 @@ class AdminProblemView extends React.Component<{
                 Stop making current
               </ActionButton>
             </Toolbar.Item>
+          </Toolbar>
+          <Toolbar>
             <Toolbar.Item>
               <ActionButton
                 action={() => callFunction("allowSubmission", { problemId })}
@@ -191,7 +213,92 @@ class AdminProblemView extends React.Component<{
             }}
           />
         </details>
+        <details>
+          <summary>Submissions</summary>
+          <Data
+            dataRef={firebase
+              .database()
+              .ref("contest/logs/submissions")
+              .child(this.props.problemId)}
+          >
+            {submissionState =>
+              unwrap(submissionState, {
+                loading: () => <Loading>Loading submissions</Loading>,
+                error: (e, retry) => (
+                  <ErrorBox error={e} retry={retry}>
+                    Failed to load submissions
+                  </ErrorBox>
+                ),
+                completed: submissions =>
+                  this.renderSubmissions(submissions, submissionAllowed)
+              })
+            }
+          </Data>
+        </details>
       </div>
+    );
+  }
+  renderSubmissions(
+    submissions: any,
+    submissionAllowed: number | undefined
+  ): ReactNode {
+    const { finishers, peopleCount, submissionCount } = getRankingInfo(
+      submissions
+    );
+    return (
+      <div>
+        <p>
+          Received {submissionCount}{" "}
+          {submissionCount === 1 ? "submission" : "submissions"} from{" "}
+          {peopleCount} {peopleCount === 1 ? "person" : "people"}.{" "}
+          {finishers.length} solved the problem.
+        </p>
+        <Table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          {finishers.map(f => (
+            <tr key={f._id}>
+              <td style={{ textAlign: "right" }}>{f.rank}</td>
+              <td>
+                <ContestantName uid={f.uid} />
+              </td>
+              <td>{formatTimeTaken(f.timestamp, submissionAllowed)}</td>
+            </tr>
+          ))}
+        </Table>
+      </div>
+    );
+  }
+}
+
+function formatTimeTaken(timestamp: number, start: number | undefined) {
+  if (!start) return "(unknown?)";
+  const ms = timestamp - start;
+  const two = (a: number) => (a < 10 ? "0" : "") + a;
+  return `${two(Math.floor(ms / 60000))}:${two(Math.floor(ms / 1000) % 60)}`;
+}
+
+class ContestantName extends React.Component<{ uid: string }> {
+  render() {
+    const uid = this.props.uid;
+    return (
+      <AdminContext.Consumer>
+        {ctx => {
+          const contestant = ctx.contestants && ctx.contestants[uid];
+          return contestant ? (
+            <span>
+              <strong>{contestant.name}</strong> ({contestant.track})
+            </span>
+          ) : (
+            `(user ${uid})`
+          );
+        }}
+      </AdminContext.Consumer>
     );
   }
 }
