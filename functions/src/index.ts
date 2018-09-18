@@ -128,7 +128,7 @@ export const joinContest = functions.https.onCall(async (data, context) => {
     );
   }
   await contestantRef.set({
-    name: context.auth.token.name,
+    name: String(context.auth.token.name),
     track: track,
     joinedAt: admin.database.ServerValue.TIMESTAMP
   });
