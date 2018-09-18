@@ -1,0 +1,12 @@
+[debug] [2018-09-18T06:23:25.777Z] ----------------------------------------------------------------------
+[debug] [2018-09-18T06:23:25.780Z] Command:       /Users/dtinth/.nvm/versions/node/v10.8.0/bin/node /Users/dtinth/.nvm/versions/node/v10.8.0/bin/firebase deploy
+[debug] [2018-09-18T06:23:25.780Z] CLI Version:   4.2.1
+[debug] [2018-09-18T06:23:25.780Z] Platform:      darwin
+[debug] [2018-09-18T06:23:25.780Z] Node Version:  v10.8.0
+[debug] [2018-09-18T06:23:25.781Z] Time:          Tue Sep 18 2018 13:23:25 GMT+0700 (Indochina Time)
+[debug] [2018-09-18T06:23:25.781Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2018-09-18T06:23:25.797Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2018-09-18T06:23:25.797Z] > authorizing via signed-in user
+[debug] [2018-09-18T06:23:25.799Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/codertrack  
+ 

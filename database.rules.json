@@ -18,6 +18,18 @@
         ".read": "$uid === auth.uid"
       }
     },
+    "contest": {
+      "solved": {
+        "$uid": {
+          ".read": "$uid === auth.uid"
+        }
+      },
+      "points": {
+        "$uid": {
+          ".read": "$uid === auth.uid"
+        }
+      }
+    },
     ".write": false
   }
 }

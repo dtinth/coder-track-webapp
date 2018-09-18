@@ -80,12 +80,14 @@ export const submitOutput = functions.https.onCall(async (data, context) => {
   const success = sanitize(expectedOutput) === sanitize(actualOutput);
   await admin
     .database()
-    .ref("logs/submissions")
+    .ref("contest/logs/submissions")
     .child(problemId)
     .push(logEntry(context, { output: actualOutput, success: true }));
   if (success) {
-    await contestantRef
-      .child("solved")
+    await admin
+      .database()
+      .ref("contest/solved")
+      .child(String(uid))
       .child(problemId)
       .set(admin.database.ServerValue.TIMESTAMP);
   } else {
@@ -128,12 +130,11 @@ export const joinContest = functions.https.onCall(async (data, context) => {
   await contestantRef.set({
     name: context.auth.token.name,
     track: track,
-    joinedAt: admin.database.ServerValue.TIMESTAMP,
-    score: 0
+    joinedAt: admin.database.ServerValue.TIMESTAMP
   });
   await admin
     .database()
-    .ref("logs/join")
+    .ref("contest/logs/join")
     .push(logEntry(context, { track: track }));
   return {};
 });

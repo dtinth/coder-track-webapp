@@ -209,8 +209,10 @@ class ProblemOutput extends React.PureComponent<
   render() {
     return (
       <fiery.Data
-        dataRef={getContestantDataRef()
-          .child("solved")
+        dataRef={firebase
+          .database()
+          .ref("contest/solved")
+          .child(firebase.auth().currentUser!.uid)
           .child(this.props.problemId)}
       >
         {dataState =>

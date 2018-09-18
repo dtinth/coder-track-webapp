@@ -5,16 +5,12 @@ import { ProblemView } from "./ProblemView";
 import { Loading, ErrorBox, Card, Button } from "./UI";
 import { Data } from "fiery";
 import { JoinForm } from "./JoinForm";
+import { getContestantDataRef } from "./contestantData";
 
 export class ContestantView extends React.Component<{ user: firebase.User }> {
   render() {
     return (
-      <Data
-        dataRef={firebase
-          .database()
-          .ref("contestants")
-          .child(this.props.user.uid)}
-      >
+      <Data dataRef={getContestantDataRef()}>
         {dataState =>
           fiery.unwrap(dataState, {
             completed: contestantInfo =>
