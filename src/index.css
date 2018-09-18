@@ -19,3 +19,7 @@ pre {
 details > summary {
   font-weight: bold;
 }
+
+pre {
+  overflow: auto;
+}
