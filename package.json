@@ -6,6 +6,7 @@
     "@types/react": "^16.4.13",
     "@types/react-dom": "^16.0.7",
     "create-react-app-parcel-typescript": "0.0.5",
+    "downloadjs": "^1.4.7",
     "emotion": "^9.2.8",
     "fiery": "0.2.0-3",
     "firebase": "^5.4.2",
