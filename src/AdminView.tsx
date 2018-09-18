@@ -150,7 +150,7 @@ class AdminProblemView extends React.Component<{
   render() {
     const problemId = this.props.problemId;
     const problemState = this.props.problemState;
-    const activated = problemState && problemState.activated;
+    // const activated = problemState && problemState.activated;
     const submissionAllowed = problemState && problemState.submissionAllowed;
     return (
       <div>
@@ -160,16 +160,26 @@ class AdminProblemView extends React.Component<{
             <Toolbar.Item>
               <ActionButton
                 action={() => callFunction("makeCurrent", { problemId })}
-                enabled={this.props.current}
+                disabled={this.props.current}
               >
                 Activate and make current
               </ActionButton>
             </Toolbar.Item>
             <Toolbar.Item>
-              <Button>Remove current</Button>
+              <ActionButton
+                action={() => callFunction("removeCurrent", {})}
+                disabled={!this.props.current}
+              >
+                Stop making current
+              </ActionButton>
             </Toolbar.Item>
             <Toolbar.Item>
-              <Button>Allow submission</Button>
+              <ActionButton
+                action={() => callFunction("allowSubmission", { problemId })}
+                disabled={!!submissionAllowed}
+              >
+                Allow submission
+              </ActionButton>
             </Toolbar.Item>
           </Toolbar>
         </div>

@@ -136,8 +136,81 @@ export const joinContest = functions.https.onCall(async (data, context) => {
     .database()
     .ref("contest/logs/join")
     .push(logEntry(context, { track: track }));
-  return {};
+  return { ok: true };
 });
+
+//////////////// ADMIN /////////////////
+
+export const makeCurrent = functions.https.onCall(async (data, context) => {
+  await assertAdmin(context);
+  const problemId = String(data.problemId);
+  await admin
+    .database()
+    .ref("contest/info/currentProblem")
+    .set(problemId);
+  const activatedRef = admin
+    .database()
+    .ref("contest/info/problems")
+    .child(problemId)
+    .child("activated");
+  if (!(await activatedRef.once("value")).val()) {
+    await activatedRef.set(admin.database.ServerValue.TIMESTAMP);
+  }
+  await admin
+    .database()
+    .ref("contest/logs/admin")
+    .push(logEntry(context, { action: "makeCurrent", problemId }));
+  return { ok: true };
+});
+
+export const removeCurrent = functions.https.onCall(async (data, context) => {
+  await assertAdmin(context);
+  await admin
+    .database()
+    .ref("contest/info/currentProblem")
+    .set(null);
+  await admin
+    .database()
+    .ref("contest/logs/admin")
+    .push(logEntry(context, { action: "removeCurrent" }));
+  return { ok: true };
+});
+export const allowSubmission = functions.https.onCall(async (data, context) => {
+  await assertAdmin(context);
+  const problemId = String(data.problemId);
+  await admin
+    .database()
+    .ref("contest/info/problems")
+    .child(problemId)
+    .child("submissionAllowed")
+    .set(admin.database.ServerValue.TIMESTAMP);
+  await admin
+    .database()
+    .ref("contest/logs/admin")
+    .push(logEntry(context, { action: "allowSubmission", problemId }));
+  return { ok: true };
+});
+
+async function assertAdmin(context: functions.https.CallableContext) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You must authenticate"
+    );
+  }
+  const isAdmin = await admin
+    .database()
+    .ref("admins")
+    .child(context.auth.uid)
+    .once("value");
+  if (isAdmin.val() !== true) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You are not admin"
+    );
+  }
+}
+//////////////// UTILS /////////////////
 
 function logEntry(
   context: functions.https.CallableContext,
