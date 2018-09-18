@@ -52,7 +52,7 @@ class App extends React.Component<
                               You are on the{" "}
                               <strong>{contestantInfo.track}</strong> track.
                               <br />
-                              You have {contestantInfo.score} points.
+                              You have <MyScore /> points.
                             </div>
                           ) : (
                             <div>(You have not joined the contest yet...)</div>
@@ -98,6 +98,32 @@ class App extends React.Component<
         );
       }
     }
+  }
+}
+
+class MyScore extends React.Component {
+  render() {
+    return (
+      <Data
+        dataRef={firebase
+          .database()
+          .ref("contest/points")
+          .child(firebase.auth().currentUser!.uid)}
+      >
+        {pointsState => {
+          return unwrap(pointsState, {
+            loading: () => "…",
+            error: e => <span onClick={() => window.alert(e)}>???</span>,
+            completed: points => {
+              return Object.keys(points || {}).reduce(
+                (a, b) => a + points[b],
+                0
+              );
+            }
+          });
+        }}
+      </Data>
+    );
   }
 }
 

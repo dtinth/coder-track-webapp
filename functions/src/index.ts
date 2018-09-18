@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { getRankingInfo } from "./submissions";
 
 admin.initializeApp();
 
@@ -175,6 +176,7 @@ export const removeCurrent = functions.https.onCall(async (data, context) => {
     .push(logEntry(context, { action: "removeCurrent" }));
   return { ok: true };
 });
+
 export const allowSubmission = functions.https.onCall(async (data, context) => {
   await assertAdmin(context);
   const problemId = String(data.problemId);
@@ -189,6 +191,39 @@ export const allowSubmission = functions.https.onCall(async (data, context) => {
     .ref("contest/logs/admin")
     .push(logEntry(context, { action: "allowSubmission", problemId }));
   return { ok: true };
+});
+
+export const finishProblem = functions.https.onCall(async (data, context) => {
+  await assertAdmin(context);
+  const problemId = String(data.problemId);
+  await admin
+    .database()
+    .ref("contest/info/problems")
+    .child(problemId)
+    .child("finished")
+    .set(admin.database.ServerValue.TIMESTAMP);
+  await admin
+    .database()
+    .ref("contest/logs/admin")
+    .push(logEntry(context, { action: "finishProblem", problemId }));
+  const submissions = (await admin
+    .database()
+    .ref("contest/logs/submissions")
+    .child(problemId)
+    .once("value")).val();
+  const { finishers } = getRankingInfo(submissions);
+  const logs: string[] = [];
+  for (const finisher of finishers) {
+    const pts = 100 - (finisher.rank - 1);
+    await admin
+      .database()
+      .ref("contest/points")
+      .child(finisher.uid)
+      .child(problemId)
+      .set(pts);
+    logs.push(`${pts} to ${finisher.uid}`);
+  }
+  return { ok: true, logs };
 });
 
 async function assertAdmin(context: functions.https.CallableContext) {

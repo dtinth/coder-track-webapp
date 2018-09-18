@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import sortBy from "lodash.sortby";
 import styled from "react-emotion";
 import { callFunction } from "./firebaseFunctions";
-import { getRankingInfo } from "./submissions";
+import { getRankingInfo } from "../functions/src/submissions";
 
 const AdminContext = createContext<{
   problems: { [problemId: string]: IProblem };
@@ -132,6 +132,7 @@ class AdminProblemList extends React.PureComponent<{
             <th>Current</th>
             <th>Active?</th>
             <th>Submission</th>
+            <th>Finished</th>
           </thead>
           <tbody>
             {sortBy(Object.keys(problems), k => problems[k].number).map(k => {
@@ -141,6 +142,7 @@ class AdminProblemList extends React.PureComponent<{
               const activated = problemState && problemState.activated;
               const submissionAllowed =
                 problemState && problemState.submissionAllowed;
+              const finished = problemState && problemState.finished;
               return (
                 <tr key={k}>
                   <td>{problem.number}</td>
@@ -151,6 +153,7 @@ class AdminProblemList extends React.PureComponent<{
                   <td>{currentProblem === k && "(current)"}</td>
                   <td>{!!activated && "(activated)"}</td>
                   <td>{!!submissionAllowed && "(allowed)"}</td>
+                  <td>{!!finished && "(finished)"}</td>
                 </tr>
               );
             })}
@@ -170,8 +173,9 @@ class AdminProblemView extends React.Component<{
   render() {
     const problemId = this.props.problemId;
     const problemState = this.props.problemState;
-    // const activated = problemState && problemState.activated;
-    const submissionAllowed = problemState && problemState.submissionAllowed;
+    const submissionAllowed =
+      (problemState && problemState.submissionAllowed) || null;
+    const finished = (problemState && problemState.finished) || null;
     return (
       <div>
         <h2>Problem [{this.props.problemId}]</h2>
@@ -201,6 +205,14 @@ class AdminProblemView extends React.Component<{
                 disabled={!!submissionAllowed}
               >
                 Allow submission
+              </ActionButton>
+            </Toolbar.Item>
+            <Toolbar.Item>
+              <ActionButton
+                action={() => callFunction("finishProblem", { problemId })}
+                disabled={!submissionAllowed || !!finished}
+              >
+                Finish and finalize score
               </ActionButton>
             </Toolbar.Item>
           </Toolbar>
@@ -240,7 +252,7 @@ class AdminProblemView extends React.Component<{
   }
   renderSubmissions(
     submissions: any,
-    submissionAllowed: number | undefined
+    submissionAllowed: number | null
   ): ReactNode {
     const { finishers, peopleCount, submissionCount } = getRankingInfo(
       submissions
@@ -276,7 +288,7 @@ class AdminProblemView extends React.Component<{
   }
 }
 
-function formatTimeTaken(timestamp: number, start: number | undefined) {
+function formatTimeTaken(timestamp: number, start: number | null) {
   if (!start) return "(unknown?)";
   const ms = timestamp - start;
   const two = (a: number) => (a < 10 ? "0" : "") + a;

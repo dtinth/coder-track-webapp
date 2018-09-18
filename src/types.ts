@@ -20,4 +20,5 @@ export interface IContestInfo {
 export interface IProblemState {
   activated?: number;
   submissionAllowed?: number;
+  finished?: number;
 }

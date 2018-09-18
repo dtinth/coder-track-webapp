@@ -271,7 +271,22 @@ class ProblemOutput extends React.PureComponent<
             {options.solved && (
               <Toolbar.Item>
                 <span style={{ color: "#383" }}>
-                  <strong>Problem solved! Congratulations!</strong>
+                  <strong>Problem solved! Congratulations!</strong>{" "}
+                  <fiery.Data
+                    dataRef={firebase
+                      .database()
+                      .ref("contest/points")
+                      .child(firebase.auth().currentUser!.uid)
+                      .child(this.props.problemId)}
+                  >
+                    {dataState =>
+                      fiery.unwrap(dataState, {
+                        completed: pt => <span>You received {pt} points!</span>,
+                        error: () => null,
+                        loading: () => null
+                      })
+                    }
+                  </fiery.Data>
                 </span>
               </Toolbar.Item>
             )}
