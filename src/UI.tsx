@@ -143,3 +143,26 @@ export class ErrorBox extends React.Component<{
     );
   }
 }
+
+export const MarkdownBody = styled("div")({
+  lineHeight: "1.4",
+  pre: {
+    background: "#eee",
+    padding: "1em"
+  }
+});
+
+export const Toolbar = Object.assign(
+  styled("div")({
+    marginTop: 8,
+    display: "flex",
+    alignItems: "baseline"
+  }),
+  {
+    Item: styled("div")({
+      "&:not(:first-child)": {
+        marginLeft: 8
+      }
+    })
+  }
+);

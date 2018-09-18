@@ -1,7 +1,15 @@
 import React, { FormEvent } from "react";
 import firebase from "firebase";
 import { IProblem } from "./types";
-import { Card, Button, Textarea, Loading, ErrorBox } from "./UI";
+import {
+  Card,
+  Button,
+  Textarea,
+  Loading,
+  ErrorBox,
+  MarkdownBody,
+  Toolbar
+} from "./UI";
 import styled, { css } from "react-emotion";
 import * as fiery from "fiery";
 
@@ -38,14 +46,7 @@ export class ProblemView extends React.Component<Props> {
       <div>
         <Card>
           <h1>{problemData.title}</h1>
-          <div
-            className={css({
-              lineHeight: "1.4",
-              pre: {
-                background: "#eee",
-                padding: "1em"
-              }
-            })}
+          <MarkdownBody
             dangerouslySetInnerHTML={{ __html: problemData.description }}
           />
         </Card>
@@ -286,18 +287,3 @@ class ProblemOutput extends React.PureComponent<
     );
   }
 }
-
-const Toolbar = Object.assign(
-  styled("div")({
-    marginTop: 8,
-    display: "flex",
-    alignItems: "baseline"
-  }),
-  {
-    Item: styled("div")({
-      "&:not(:first-child)": {
-        marginLeft: 8
-      }
-    })
-  }
-);

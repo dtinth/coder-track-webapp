@@ -1,13 +1,17 @@
 import React, { ReactNode } from "react";
-import { Card, ErrorBox } from "./UI";
+import { Card, ErrorBox, MarkdownBody } from "./UI";
 import { Data, unwrap } from "fiery";
 import firebase from "firebase";
-
+import { IProblem, IContestant, IContestInfo } from "./types";
+import { Switch, Route } from "react-router";
+import { Link } from "react-router-dom";
+import sortBy from "lodash.sortby";
+import styled from "react-emotion";
 export class AdminView extends React.Component {
   render() {
     return (
       <Card>
-        <h1>Admin view</h1>
+        <h1>Admin</h1>
         <Data dataRef={firebase.database().ref("problems")}>
           {problemsState => (
             <Data dataRef={firebase.database().ref("contestants")}>
@@ -20,9 +24,12 @@ export class AdminView extends React.Component {
                         contestants: contestantsState,
                         contestInfo: contestInfoState
                       },
-                      output => {
-                        return null;
-                      }
+                      output =>
+                        this.renderAdmin(
+                          output.problems,
+                          output.contestants,
+                          output.contestInfo
+                        )
                     )
                   }
                 </Data>
@@ -33,7 +40,129 @@ export class AdminView extends React.Component {
       </Card>
     );
   }
+  renderAdmin(
+    problems: { [problemId: string]: IProblem },
+    contestants: { [uid: string]: IContestant },
+    contestInfo: IContestInfo | null
+  ) {
+    return (
+      <Switch>
+        <Route
+          exact
+          path="/admin/problems"
+          render={() => (
+            <AdminProblemList problems={problems} contestInfo={contestInfo} />
+          )}
+        />
+        <Route
+          exact
+          path="/admin/problem/:id"
+          render={({ match }) => {
+            const k = match.params.id;
+            const problem = problems[k];
+            const problemState =
+              contestInfo && contestInfo.problems && contestInfo.problems[k];
+            const activated = problemState && problemState.activated;
+            const submissionAllowed =
+              problemState && problemState.submissionAllowed;
+            return <AdminProblemView problemId={k} problemData={problem} />;
+          }}
+        />
+        <Route
+          exact
+          path="/admin"
+          render={() => (
+            <ul>
+              <li>
+                <Link to="/admin/problems">Problems</Link>
+              </li>
+            </ul>
+          )}
+        />
+      </Switch>
+    );
+  }
 }
+
+class AdminProblemList extends React.PureComponent<{
+  problems: { [problemId: string]: IProblem };
+  contestInfo: IContestInfo | null;
+}> {
+  render() {
+    const problems = this.props.problems;
+    const contestInfo = this.props.contestInfo;
+    const currentProblem = contestInfo && contestInfo.currentProblem;
+    return (
+      <div>
+        <h2>Problems</h2>
+        <Table>
+          <thead>
+            <th>#</th>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Current</th>
+            <th>Active?</th>
+            <th>Submission</th>
+          </thead>
+          <tbody>
+            {sortBy(Object.keys(problems), k => problems[k].number).map(k => {
+              const problem = problems[k];
+              const problemState =
+                contestInfo && contestInfo.problems && contestInfo.problems[k];
+              const activated = problemState && problemState.activated;
+              const submissionAllowed =
+                problemState && problemState.submissionAllowed;
+              return (
+                <tr key={k}>
+                  <td>{problem.number}</td>
+                  <td>
+                    <Link to={`/admin/problem/${k}`}>{k}</Link>
+                  </td>
+                  <td>{problem.title}</td>
+                  <td>{currentProblem === k && "(current)"}</td>
+                  <td>{!!activated && "(activated)"}</td>
+                  <td>{!!submissionAllowed && "(allowed)"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+      </div>
+    );
+  }
+}
+
+class AdminProblemView extends React.Component<{
+  problemId: string;
+  problemData: IProblem;
+}> {
+  render() {
+    return (
+      <div>
+        <h2>Problem [{this.props.problemId}]</h2>
+        <details>
+          <summary>Problem description</summary>
+          <MarkdownBody
+            dangerouslySetInnerHTML={{
+              __html: this.props.problemData.description
+            }}
+          />
+        </details>
+      </div>
+    );
+  }
+}
+
+const Table = styled("table")({
+  borderCollapse: "collapse",
+  "& td, & th": {
+    border: "1px solid #ccc",
+    padding: 4
+  },
+  "& th": {
+    background: "#eee"
+  }
+});
 
 function joinState<S extends { [k: string]: any }>(
   states: S,

@@ -9,6 +9,9 @@
     "emotion": "^9.2.8",
     "fiery": "0.2.0-3",
     "firebase": "^5.4.2",
+    "lodash.sortby": "^4.7.0",
+    "lodash.topairs": "^4.3.0",
+    "lodash.values": "^4.3.0",
     "react": "^16.5.0",
     "react-dom": "^16.5.0",
     "react-emotion": "^9.2.8",
@@ -34,6 +37,7 @@
     ]
   },
   "devDependencies": {
+    "@types/lodash.sortby": "^4.7.4",
     "@types/react-router-dom": "^4.3.1",
     "typescript": "^3.0.3"
   }
