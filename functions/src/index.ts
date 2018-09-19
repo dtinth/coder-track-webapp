@@ -91,6 +91,7 @@ export const submitOutput = functions.https.onCall(async (data, context) => {
       .child(String(uid))
       .child(problemId)
       .set(admin.database.ServerValue.TIMESTAMP);
+    await updateScoreboard(problemId);
   } else {
     await contestantRef
       .child("cooldown")
@@ -233,6 +234,11 @@ export const finishProblem = functions.https.onCall(async (data, context) => {
     .database()
     .ref("contest/logs/admin")
     .push(logEntry(context, { action: "finishProblem", problemId }));
+  const logs = await updateScoreboard(problemId);
+  return { ok: true, logs };
+});
+
+async function updateScoreboard(problemId: string) {
   const submissions = (await admin
     .database()
     .ref("contest/logs/submissions")
@@ -240,18 +246,22 @@ export const finishProblem = functions.https.onCall(async (data, context) => {
     .once("value")).val();
   const { finishers } = getRankingInfo(submissions);
   const logs: string[] = [];
+  const promises: Promise<any>[] = [];
   for (const finisher of finishers) {
     const pts = 100 - (finisher.rank - 1);
-    await admin
-      .database()
-      .ref("contest/points")
-      .child(finisher.uid)
-      .child(problemId)
-      .set(pts);
+    promises.push(
+      admin
+        .database()
+        .ref("contest/points")
+        .child(finisher.uid)
+        .child(problemId)
+        .set(pts)
+    );
     logs.push(`${pts} to ${finisher.uid}`);
   }
-  return { ok: true, logs };
-});
+  await Promise.all(promises);
+  return logs;
+}
 
 async function assertAdmin(context: functions.https.CallableContext) {
   if (!context.auth) {

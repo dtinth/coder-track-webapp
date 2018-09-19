@@ -81,6 +81,16 @@ class App extends React.Component<
                       <ContestantView user={this.state.currentUser!} />
                     )}
                   />
+                  <Route
+                    exact
+                    path="/problem/:id"
+                    render={p => (
+                      <ContestantView
+                        user={this.state.currentUser!}
+                        requestedProblem={p.match.params.id}
+                      />
+                    )}
+                  />
                   <Route path="/admin" render={() => <AdminView />} />
                   <Route path="*" render={() => <Redirect to="/" />} />
                 </Switch>

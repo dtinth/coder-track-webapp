@@ -1,13 +1,17 @@
 import firebase from "firebase";
-import React from "react";
+import React, { ReactNode } from "react";
 import * as fiery from "fiery";
 import { ProblemView } from "./ProblemView";
 import { Loading, ErrorBox, Card, Button } from "./UI";
 import { Data } from "fiery";
 import { JoinForm } from "./JoinForm";
 import { getContestantDataRef } from "./contestantData";
-
-export class ContestantView extends React.Component<{ user: firebase.User }> {
+import sortBy from "lodash.sortby";
+import { Link } from "react-router-dom";
+export class ContestantView extends React.Component<{
+  user: firebase.User;
+  requestedProblem?: string;
+}> {
   render() {
     return (
       <Data dataRef={getContestantDataRef()}>
@@ -43,24 +47,23 @@ export class ContestantView extends React.Component<{ user: firebase.User }> {
         {dataState =>
           fiery.unwrap(dataState, {
             completed: contestInfo => {
+              if (this.props.requestedProblem) {
+                return (
+                  <div>
+                    <Card>
+                      คำเตือน: คุณกำลังดูโจทย์เก่าอยู่{" "}
+                      <Link to="/">ไปยังโจทย์ข้อล่าสุด</Link>
+                    </Card>
+                    {this.renderProblemById(
+                      contestInfo,
+                      this.props.requestedProblem
+                    )}
+                  </div>
+                );
+              }
               const currentProblem = contestInfo && contestInfo.currentProblem;
-              const currentProblemState =
-                contestInfo &&
-                contestInfo.problems &&
-                currentProblem &&
-                contestInfo.problems[currentProblem];
-              const submissionAllowed =
-                !!currentProblemState &&
-                !!currentProblemState.submissionAllowed;
-              const finished =
-                !!currentProblemState && !!currentProblemState.finished;
               return currentProblem ? (
-                <ProblemView
-                  problemId={currentProblem}
-                  key={currentProblem}
-                  submissionAllowed={submissionAllowed}
-                  finished={finished}
-                />
+                this.renderProblemById(contestInfo, currentProblem)
               ) : (
                 <Card>Please wait for a problem to be made available...</Card>
               );
@@ -74,6 +77,48 @@ export class ContestantView extends React.Component<{ user: firebase.User }> {
           })
         }
       </Data>
+    );
+  }
+  renderProblemById(contestInfo: any, problemId: string): ReactNode {
+    const currentProblem = contestInfo && contestInfo.currentProblem;
+    const allProblemsState = contestInfo && contestInfo.problems;
+    const problemState =
+      allProblemsState && problemId && allProblemsState[problemId];
+    const submissionAllowed =
+      !!problemState && !!problemState.submissionAllowed;
+    const finished = !!problemState && !!problemState.finished;
+    const availableProblems = allProblemsState
+      ? sortBy(
+          Object.keys(allProblemsState).filter(
+            k => allProblemsState[k].activated
+          ),
+          "activated"
+        )
+      : [];
+    return (
+      <div>
+        <ProblemView
+          problemId={problemId}
+          key={problemId}
+          submissionAllowed={submissionAllowed}
+          finished={finished}
+        />
+        {availableProblems.length && (
+          <Card>
+            <h2>Available problems</h2>
+            <ol>
+              {availableProblems.map((k, i) => (
+                <li key={i}>
+                  <Link to={k === currentProblem ? "/" : `/problem/${k}`}>
+                    {k}
+                  </Link>
+                  {k === currentProblem && " (latest)"}
+                </li>
+              ))}
+            </ol>
+          </Card>
+        )}
+      </div>
     );
   }
 }

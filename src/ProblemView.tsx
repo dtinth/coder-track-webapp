@@ -292,7 +292,7 @@ class ProblemOutput extends React.PureComponent<
   renderForm(options: { solved: boolean }) {
     const disabled =
       !this.props.submissionAllowed ||
-      !!this.props.finished ||
+      // !!this.props.finished ||
       this.state.cooldown > 0 ||
       options.solved;
     return (
@@ -308,7 +308,7 @@ class ProblemOutput extends React.PureComponent<
           <Toolbar>
             <Toolbar.Item>
               <Button disabled={disabled}>
-                {this.props.finished ? "Time is up" : "Submit"}
+                {this.props.finished ? "Submit" : "Submit"}
               </Button>
             </Toolbar.Item>
             {this.state.cooldown > 0 && (
