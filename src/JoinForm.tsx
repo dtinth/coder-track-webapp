@@ -42,9 +42,9 @@ export class JoinForm extends React.Component<{}, State> {
               checked={this.state.selectedTrack === "individual"}
               onClick={() => this.setState({ selectedTrack: "individual" })}
             />{" "}
-            Individual track
+            Individual track (online)
           </label>
-          <br />
+          {/* <br />
           <label>
             <input
               type="radio"
@@ -52,7 +52,7 @@ export class JoinForm extends React.Component<{}, State> {
               onClick={() => this.setState({ selectedTrack: "student" })}
             />{" "}
             Student track (สำหรับผู้ที่กำลังศึกษาระดับไม่เกินปริญญาตรีเท่านั้น)
-          </label>
+          </label> */}
         </p>
         {this.state.loading ? (
           <Loading>Joining contest...</Loading>
