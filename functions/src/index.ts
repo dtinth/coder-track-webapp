@@ -248,7 +248,7 @@ async function updateScoreboard(problemId: string) {
   const logs: string[] = [];
   const promises: Promise<any>[] = [];
   for (const finisher of finishers) {
-    const pts = 100 - (finisher.rank - 1);
+    const pts = Math.max(0, 100 - (finisher.rank - 1));
     promises.push(
       admin
         .database()
@@ -258,6 +258,9 @@ async function updateScoreboard(problemId: string) {
         .set(pts)
     );
     logs.push(`${pts} to ${finisher.uid}`);
+    if (finisher.rank > 105) {
+      break;
+    }
   }
   await Promise.all(promises);
   return logs;
