@@ -104,7 +104,6 @@ export class ContestantView extends React.Component<{
                   <Link to={k === currentProblem ? "/" : `/problem/${k}`}>
                     {k}
                   </Link>
-                  {k === currentProblem && " (latest)"}
                 </li>
               ))}
             </ol>
