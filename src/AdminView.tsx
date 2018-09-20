@@ -284,7 +284,7 @@ class AdminProblemView extends React.Component<{
             }}
           />
         </details>
-        <details>
+        <details open>
           <summary>Submissions</summary>
           <Data
             dataRef={firebase
