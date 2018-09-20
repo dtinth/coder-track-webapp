@@ -92,7 +92,7 @@ export class ContestantView extends React.Component<{
           Object.keys(allProblemsState).filter(
             k => allProblemsState[k].activated
           ),
-          "activated"
+          k => allProblemsState[k].activated
         )
       : [];
     return (
