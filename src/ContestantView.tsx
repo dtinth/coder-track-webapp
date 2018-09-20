@@ -48,17 +48,9 @@ export class ContestantView extends React.Component<{
           fiery.unwrap(dataState, {
             completed: contestInfo => {
               if (this.props.requestedProblem) {
-                return (
-                  <div>
-                    <Card>
-                      คำเตือน: คุณกำลังดูโจทย์เก่าอยู่{" "}
-                      <Link to="/">ไปยังโจทย์ข้อล่าสุด</Link>
-                    </Card>
-                    {this.renderProblemById(
-                      contestInfo,
-                      this.props.requestedProblem
-                    )}
-                  </div>
+                return this.renderProblemById(
+                  contestInfo,
+                  this.props.requestedProblem
                 );
               }
               const currentProblem = contestInfo && contestInfo.currentProblem;
